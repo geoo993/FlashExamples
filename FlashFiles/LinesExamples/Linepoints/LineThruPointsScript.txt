@@ -1,0 +1,249 @@
+/*
+Last modified May 29, 2007.
+
+This is the applet "The Line Through Two Points" from "Creating Applets from Scratch"
+section of the MathDL Flash Forum Learning Center written in ActionScript 3.0 (AS3).
+*/
+
+
+
+
+// Code for Step 2 of the tutorial
+
+/* 
+The first five lines set the size of the board and the range of the coordinate system.
+This should match the movieclip and static text on the stage.
+*/
+var nXmin:Number=-10;
+var nXmax:Number=10;
+var nYmin:Number=-10;
+var nYmax:Number=10;
+var nSize:Number = mcBoard.width;
+
+/*
+The next few lines add two shapes (shAxis and shLine) and two sprites (spPoint1 and spPoint2) 
+to mcBoard in the order that we would like them to be displayed.  At this time, 
+we create graphics only for the shAxis shape.  We use sprites for the points and a function 
+for drawAxis simply to facilitate future enhancements.
+*/
+
+var shAxis:Shape = new Shape();
+mcBoard.addChild(shAxis);
+drawAxis();
+
+var shLine:Shape = new Shape();
+mcBoard.addChild(shLine);
+
+var spPoint1:Sprite = new Sprite();
+mcBoard.addChild(spPoint1);
+
+var spPoint2:Sprite = new Sprite();
+mcBoard.addChild(spPoint2);
+
+function drawAxis():void {
+	shAxis.graphics.lineStyle(2, 0x999999);
+	shAxis.graphics.moveTo(1, mcBoard.height/2);
+	shAxis.graphics.lineTo(mcBoard.width - 1, mcBoard.height/2);
+	shAxis.graphics.moveTo(mcBoard.width/2, 1);
+	shAxis.graphics.lineTo(mcBoard.width/2, mcBoard.height - 1);
+}
+
+
+
+
+// Code for Step 3 of the tutorial
+
+/*
+We next add code that asks the mcBoard to listen for mouse clicks and draw either the spPoint1 
+or the spPoint2 sprite. To know which point to place, we simply count the points placed 
+with the numPoints variable.  After the second point is drawn, we draw the line using 
+a function that will be defined in the next step. 
+*/
+
+var numPoints:Number = 0;
+
+mcBoard.addEventListener(MouseEvent.CLICK, placePoint);
+
+function placePoint(evt:MouseEvent):void {
+	var x1fun:Number;
+	var x2fun:Number;
+	var y1fun:Number;
+	var y2fun:Number;
+	
+	if (numPoints == 0)	{
+		
+		spPoint1.graphics.lineStyle(0,0x000000);
+		spPoint1.graphics.beginFill(0xCC3333);
+		spPoint1.graphics.drawCircle(0,0,5);
+		spPoint1.graphics.endFill();
+		
+		spPoint1.x = mcBoard.mouseX;
+		spPoint1.y = mcBoard.mouseY;
+		
+		// Convert from pixels to coordinate system & display on stage.
+		x1fun=Math.floor(xtoFun(spPoint1.x)*100)/100;
+		y1fun=Math.floor(ytoFun(spPoint1.y)*100)/100;
+		point1Box.text="("+String(x1fun)+","+String(y1fun)+")";
+		
+		numPoints = 1;
+	}
+	else if(numPoints == 1)
+	{
+		spPoint2.graphics.lineStyle(0,0x000000);
+		spPoint2.graphics.beginFill(0xCC3333);
+		spPoint2.graphics.drawCircle(0,0,5);
+		spPoint2.graphics.endFill();
+
+		spPoint2.x = mcBoard.mouseX;
+		spPoint2.y = mcBoard.mouseY;
+		
+		// Convert from pixels to coordinate system & display on stage.
+		x2fun=Math.floor(xtoFun(spPoint2.x)*100)/100;
+		y2fun=Math.floor(ytoFun(spPoint2.y)*100)/100;
+		point2Box.text="("+String(x2fun)+","+String(y2fun)+")";
+		
+		numPoints = 2;
+		drawLine();
+	}
+}
+
+/*
+The next two functions take a pixel value, a, for x or y relative
+to mcBoard and convert it to the corresponding functional value
+in the range [nXmin,nXmax] or [nYmin, nYmax]. 
+*/
+
+function xtoFun(a:Number):Number {
+	var xconv:Number=nSize/(nXmax-nXmin);
+	return a/xconv+nXmin;	
+}
+	
+function ytoFun(a:Number):Number {
+	var yconv:Number=nSize/(nYmax-nYmin);
+	return nYmax-a/yconv;	
+}
+
+
+
+
+// Code for Step 4 of the tutorial
+
+/*
+The drawLine function does all of the heavy lifting in this application
+*/
+
+function drawLine():void {	
+
+	// Set line thickness and color of the line to be drawn.
+	shLine.graphics.lineStyle(2, 0x33333FF);
+
+	// Local variables for the points on mcBoard to save typing.
+	var x1:Number = spPoint1.x;
+	var x2:Number = spPoint2.x;
+	var y1:Number = spPoint1.y;
+	var y2:Number = spPoint2.y;
+	
+	/*
+	m is the real "pixel slope" on the mcBoard. The variables 
+	display_m and display_b are slope and the y-intercept relative to
+	the coordinate system for display purposes.
+	*/
+	var m:Number;
+	var display_m:Number;
+	var display_b:Number;
+		
+	var xbeg:Number;
+	var xend:Number;
+	var ybeg:Number;
+	var yend:Number;
+	
+	if(x1==x2 && y1==y2){
+		slopeBox.text="";
+		equationBox.text="One point is not enough to define a unique line.";
+		return;
+	}
+	if(x1==x2){
+		slopeBox.text="undefined";
+		equationBox.text="x"+" = " + String(xtoFun(x1));
+		shLine.graphics.moveTo(x1,0);
+		shLine.graphics.lineTo(x1,nSize);
+		return;
+	}
+	if(y1==y2){
+		slopeBox.text="0";
+		equationBox.text="y"+" = "+String(ytoFun(y1));
+		shLine.graphics.moveTo(0,y1);
+		shLine.graphics.lineTo(nSize,y1);
+		return;
+	}
+		
+	m = (y1 - y2)/(x1 - x2);
+	
+	display_m = -m;
+	display_b = ytoFun(y1) + m * xtoFun(x1);
+	
+	slopeBox.text = String(Math.floor(10000*display_m)/10000);
+	equationBox.text = "y = " + slopeBox.text + " x  +  " + String(Math.floor(10000*display_b)/10000);
+
+	/* The next block of code finds the y-coordinates that the line
+	would have at x=0 and x=nSize.  We then test to see if these 
+	y-coordinates fit on the board.  If not, we know the correct 
+	points to use are along the top or bottom of the board.
+	*/
+
+				
+	xbeg = 0;
+	ybeg = y1 + m * (xbeg - x1);
+	xend = nSize;
+	yend = y1 + m * (xend - x1);
+				
+	if(ybeg>nSize){
+		ybeg = nSize;
+		xbeg = x1 + (ybeg - y1)/m;
+	}
+		
+	if(ybeg<0){
+		ybeg=0;
+		xbeg=x1 + (ybeg - y1)/m;
+	}
+		
+	if(yend>nSize){
+		yend = nSize;
+		xend = x1 + (yend - y1)/m;
+	}
+	
+	if(yend<0){
+		yend=0;
+		xend=x1 + (yend - y1)/m;
+	}
+	shLine.graphics.moveTo(xbeg,ybeg);	//Draw the line!
+	shLine.graphics.lineTo(xend,yend);
+}
+
+
+
+
+// Code for Step 5 of the tutorial
+
+/*
+When the button CLEAR whose instance name is butClear is clicked,
+the function clearLine runs. That is, the dots are removed
+and all the text boxes cleared. The global variable numPoints,
+which counts the number of clicks, is reset to 0.
+*/
+
+btnClear.addEventListener(MouseEvent.CLICK, clearLine);
+
+function clearLine(evt:MouseEvent):void {
+	
+	numPoints=0;
+	
+	shLine.graphics.clear();
+	spPoint1.graphics.clear();
+	spPoint2.graphics.clear();
+	
+	point1Box.text="";
+	point2Box.text="";
+	slopeBox.text="";
+	equationBox.text="";	
+}
